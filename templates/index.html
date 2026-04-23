@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Makor — Biblical &amp; Talmudic Name Explorer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --parchment: #f5f0e8;
+      --parchment-dark: #ebe4d6;
+      --ink: #2c2416;
+      --ink-soft: #5a4e3c;
+      --ink-faint: #8a7e6c;
+      --accent: #8b3a3a;
+      --accent-light: #d4a574;
+      --border: #d4cabb;
+      --card-bg: rgba(255, 253, 248, 0.7);
+      --shadow-sm: 0 1px 3px rgba(44, 36, 22, 0.06);
+      --shadow-md: 0 4px 16px rgba(44, 36, 22, 0.08);
+      --serif: 'Cormorant Garamond', Georgia, serif;
+      --sans: 'Source Sans 3', 'Segoe UI', sans-serif;
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: var(--parchment);
+      color: var(--ink);
+      font-family: var(--sans);
+      position: relative;
+    }
+
+    /* ── Background texture ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      opacity: 0.03;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Top Bar ── */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(245, 240, 232, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .top-bar-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-glyph {
+      font-size: 26px;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .logo-text {
+      font-family: var(--serif);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: 0.02em;
+    }
+    .top-bar-tagline {
+      font-size: 13px;
+      color: var(--ink-faint);
+      letter-spacing: 0.04em;
+    }
+
+    /* ── Search ── */
+    .search-wrapper {
+      max-width: 640px;
+      margin: 36px auto 0;
+      padding: 0 24px;
+      position: relative;
+      z-index: 50;
+    }
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 6px 6px 6px 16px;
+      box-shadow: var(--shadow-md);
+      transition: border-color 0.2s;
+    }
+    .search-box:focus-within {
+      border-color: var(--accent-light);
+    }
+    .search-icon {
+      color: var(--ink-faint);
+      flex-shrink: 0;
+      display: flex;
+    }
+    .search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-family: var(--serif);
+      font-size: 18px;
+      color: var(--ink);
+      padding: 10px 12px;
+    }
+    .search-input::placeholder {
+      color: var(--ink-faint);
+      font-style: italic;
+    }
+    .search-btn {
+      flex-shrink: 0;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 22px;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .search-btn:hover:not(:disabled) {
+      background: #7a3232;
+      transform: translateY(-1px);
+    }
+    .search-btn:disabled { opacity: 0.5; cursor: default; }
+
+    .suggestions {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 24px;
+      right: 24px;
+      background: #fffdf8;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+      display: none;
+    }
+    .suggestions.visible { display: block; }
+    .suggestion-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 10px 20px;
+      border: none;
+      background: transparent;
+      font-family: var(--serif);
+      font-size: 16px;
+      color: var(--ink);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .suggestion-item:hover {
+      background: var(--parchment-dark);
+    }
+
+    /* ── Main ── */
+    .main-content {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Empty State ── */
+    .empty-state {
+      text-align: center;
+      padding: 72px 20px;
+      animation: fadeUp 0.5s var(--ease-out) both;
+    }
+    .empty-icon {
+      font-size: 56px;
+      color: var(--accent-light);
+      margin-bottom: 20px;
+      opacity: 0.7;
+    }
+    .empty-heading {
+      font-family: var(--serif);
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 10px;
+    }
+    .empty-text {
+      font-size: 16px;
+      color: var(--ink-soft);
+      max-width: 420px;
+      margin: 0 auto 32px;
+      line-height: 1.6;
+    }
+    .suggested-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--ink-faint);
+      margin-bottom: 12px;
+    }
+    .suggested-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    .suggested-chip {
+      font-family: var(--serif);
+      font-size: 15px;
+      padding: 6px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: var(--ink-soft);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .suggested-chip:hover {
+      background: var(--parchment-dark);
+    }
+
+    /* ── Loading ── */
+    .loading {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--ink-faint);
+    }
+    .loading-spinner {
+      width: 28px;
+      height: 28px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      margin: 0 auto 16px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result Layout ── */
+    .result-layout {
+      display: grid;
+      grid-template-columns: 1fr 260px;
+      gap: 32px;
+      align-items: start;
+    }
+    @media (max-width: 768px) {
+      .result-layout { grid-template-columns: 1fr; }
+      .top-bar-tagline { display: none; }
+    }
+
+    /* ── Name Header ── */
+    .name-header { margin-bottom: 8px; }
+    .name-header-top {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .name-display {
+      font-family: var(--serif);
+      font-size: 48px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.1;
+    }
+    .name-hebrew {
+      font-size: 32px;
+      color: var(--accent);
+      font-weight: 400;
+      direction: rtl;
+    }
+    .name-meaning {
+      font-family: var(--serif);
+      font-size: 18px;
+      font-style: italic;
+      color: var(--ink-soft);
+      margin: 8px 0 16px;
+      line-height: 1.5;
+    }
+    .name-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .meta-tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 12px;
+      background: var(--parchment-dark);
+      border-radius: 4px;
+      color: var(--ink-faint);
+    }
+
+    /* ── Source Sections ── */
+    .source-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-top: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .section-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px 20px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      font-family: var(--sans);
+      transition: background 0.15s;
+    }
+    .section-header:hover { background: rgba(0,0,0,0.015); }
+    .section-icon { font-size: 20px; }
+    .section-title {
+      flex: 1;
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .chevron {
+      font-size: 14px;
+      color: var(--ink-faint);
+      transition: transform 0.25s var(--ease-out);
+    }
+    .chevron.open { transform: rotate(0deg); }
+    .chevron.closed { transform: rotate(-90deg); }
+
+    .section-body {
+      padding: 0 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .section-body.hidden { display: none; }
+
+    .reference-card {
+      padding: 16px 18px;
+      background: var(--parchment);
+      border-left: 3px solid var(--accent-light);
+      border-radius: 0 8px 8px 0;
+    }
+    .reference-citation {
+      display: block;
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      margin-bottom: 8px;
+      font-style: normal;
+    }
+    .reference-text {
+      font-family: var(--serif);
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--ink-soft);
+    }
+
+    /* ── Variants Panel ── */
+    .variants-panel { position: sticky; top: 80px; }
+    .variants-group {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 16px;
+    }
+    .panel-heading {
+      font-family: var(--serif);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink);
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .variant-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      padding: 4px 0;
+    }
+    .variant-lang {
+      color: var(--ink-faint);
+      font-weight: 500;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .variant-form {
+      font-family: var(--serif);
+      color: var(--ink-soft);
+      font-size: 15px;
+    }
+    .related-names {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .related-tag {
+      font-family: var(--serif);
+      font-size: 14px;
+      padding: 4px 12px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      color: var(--ink-soft);
+      background: var(--parchment);
+    }
+
+    /* ── Not Found ── */
+    .not-found {
+      text-align: center;
+      padding: 80px 20px;
+    }
+    .not-found-icon {
+      font-family: var(--serif);
+      font-size: 48px;
+      color: var(--border);
+      margin-bottom: 16px;
+    }
+    .not-found h2 {
+      font-family: var(--serif);
+      font-size: 22px;
+      color: var(--ink);
+      margin-bottom: 8px;
+    }
+    .not-found p {
+      color: var(--ink-faint);
+      font-size: 15px;
+    }
+
+    /* ── Footer ── */
+    .app-footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 12px;
+      color: var(--ink-faint);
+      letter-spacing: 0.03em;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Animation ── */
+    .fade-in {
+      animation: fadeUp 0.45s var(--ease-out) both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 480px) {
+      .name-display { font-size: 36px; }
+      .name-hebrew { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <nav class="top-bar">
+    <div class="top-bar-inner">
+      <div class="logo">
+        <span class="logo-glyph">𐤁</span>
+        <span class="logo-text">Makor</span>
+      </div>
+      <span class="top-bar-tagline">Biblical &amp; Talmudic Name Explorer</span>
+    </div>
+  </nav>
+
+  <!-- Search -->
+  <div class="search-wrapper">
+    <div class="search-box">
+      <div class="search-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <circle cx="11" cy="11" r="7"/>
+          <path d="M21 21l-4.35-4.35"/>
+        </svg>
+      </div>
+      <input type="text" id="searchInput" class="search-input" placeholder="Search a name…" autofocus>
+      <button id="searchBtn" class="search-btn">Explore</button>
+    </div>
+    <div id="suggestions" class="suggestions"></div>
+  </div>
+
+  <!-- Content -->
+  <main id="content" class="main-content"></main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <p>Makor · A scholarly reference for names across biblical and rabbinic literature</p>
+  </footer>
+
+  <script>
+    // ─── DOM refs ─────────────────────────────────────────────────────────
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const suggestionsEl = document.getElementById('suggestions');
+    const content = document.getElementById('content');
+
+    // ─── State ────────────────────────────────────────────────────────────
+    let debounceTimer = null;
+
+    // ─── Init: show empty state ───────────────────────────────────────────
+    showEmptyState();
+
+    // ─── Event listeners ──────────────────────────────────────────────────
+    searchBtn.addEventListener('click', () => doSearch(searchInput.value));
+
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doSearch(searchInput.value);
+    });
+
+    searchInput.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      const q = searchInput.value.trim();
+      if (q.length < 2) {
+        suggestionsEl.classList.remove('visible');
+        return;
+      }
+      debounceTimer = setTimeout(() => fetchSuggestions(q), 200);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!suggestionsEl.contains(e.target) && e.target !== searchInput) {
+        suggestionsEl.classList.remove('visible');
+      }
+    });
+
+    // ─── API calls ────────────────────────────────────────────────────────
+    async function doSearch(query) {
+      query = query.trim();
+      if (!query) return;
+
+      suggestionsEl.classList.remove('visible');
+      showLoading();
+
+      try {
+        const res = await fetch(`/api/names/${encodeURIComponent(query)}`);
+        const json = await res.json();
+
+        if (json.found) {
+          renderResult(json.data);
+        } else {
+          showNotFound(query);
+        }
+      } catch (err) {
+        console.error('Search failed:', err);
+        showNotFound(query);
+      }
+    }
+
+    async function fetchSuggestions(prefix) {
+      try {
+        const res = await fetch(`/api/names/suggest?q=${encodeURIComponent(prefix)}`);
+        const names = await res.json();
+
+        if (names.length === 0) {
+          suggestionsEl.classList.remove('visible');
+          return;
+        }
+
+        suggestionsEl.innerHTML = names.map(n =>
+          `<button class="suggestion-item" data-name="${esc(n)}">${esc(n)}</button>`
+        ).join('');
+
+        suggestionsEl.querySelectorAll('.suggestion-item').forEach(btn => {
+          btn.addEventListener('click', () => {
+            searchInput.value = btn.dataset.name;
+            doSearch(btn.dataset.name);
+          });
+        });
+
+        suggestionsEl.classList.add('visible');
+      } catch (err) {
+        console.error('Suggestions failed:', err);
+      }
+    }
+
+    // ─── Renderers ────────────────────────────────────────────────────────
+    function showEmptyState() {
+      const chips = ['Miriam', 'Ezra', 'Ruth', 'Caleb', 'Naomi', 'Elijah', 'Esther', 'Asher'];
+      content.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">𐤀</div>
+          <h2 class="empty-heading">Explore the roots of a name</h2>
+          <p class="empty-text">Search any name to discover its meaning, biblical origins, and talmudic commentary.</p>
+          <div class="suggested-names">
+            <p class="suggested-label">Try one of these:</p>
+            <div class="suggested-grid">
+              ${chips.map(n => `<span class="suggested-chip" data-name="${n}">${n}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+      content.querySelectorAll('.suggested-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          searchInput.value = chip.dataset.name;
+          doSearch(chip.dataset.name);
+        });
+      });
+    }
+
+    function showLoading() {
+      content.innerHTML = `
+        <div class="loading">
+          <div class="loading-spinner"></div>
+          <p>Searching ancient sources…</p>
+        </div>
+      `;
+    }
+
+    function showNotFound(query) {
+      content.innerHTML = `
+        <div class="not-found fade-in">
+          <div class="not-found-icon">?</div>
+          <h2>No entry found for "${esc(query)}"</h2>
+          <p>This name isn't in the database yet. Try another name or check your spelling.</p>
+        </div>
+      `;
+    }
+
+    function renderResult(data) {
+      console.log(data.sections)
+      const sectionsHtml = data.sections.map((sec, i) => `
+        <section class="source-section fade-in" style="animation-delay: ${0.1 + i * 0.08}s">
+          <button class="section-header" data-section="${i}">
+            <span class="section-icon">${sec.icon}</span>
+            <h2 class="section-title">${esc(sec.source)}</h2>
+            <span class="chevron open" id="chevron-${i}">▾</span>
+          </button>
+          <div class="section-body" id="section-body-${i}">
+            ${sec.references.map(ref => `
+              <div class="reference-card">
+                <cite class="reference-citation">${esc(ref.citation)}</cite>
+                <p class="reference-text">${(ref.text)}</p>
+              </div>
+            `).join('')}
+          </div>
+        </section>
+      `).join('');
+
+      let variantsHtml = '';
+      if (data.variants && data.variants.length > 0) {
+        variantsHtml += `
+          <div class="variants-group">
+            <h3 class="panel-heading">Cross-Cultural Forms</h3>
+            <div>
+              ${data.variants.map(v => `
+                <div class="variant-item">
+                  <span class="variant-lang">${esc(v.language)}</span>
+                  <span class="variant-form">${esc(v.form)}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+      if (data.relatedNames && data.relatedNames.length > 0) {
+        variantsHtml += `
+          <div class="variants-group">
+            <h3 class="panel-heading">Related Names</h3>
+            <div class="related-names">
+              ${data.relatedNames.map(n => `<span class="related-tag">${esc(n)}</span>`).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      content.innerHTML = `
+        <div class="result-layout">
+          <div class="result-main">
+            <header class="name-header fade-in">
+              <div class="name-header-top">
+                <h1 class="name-display">${esc(data.name)}</h1>
+                <span class="name-hebrew">${esc(data.transliteration)}</span>
+              </div>
+              <p class="name-meaning">"${esc(data.meaning)}"</p>
+              <div class="name-meta">
+                <span class="meta-tag">${esc(data.origin)}</span>
+                <span class="meta-tag">${esc(data.gender)}</span>
+                <span class="meta-tag">${esc(data.pronunciation)}</span>
+              </div>
+            </header>
+            ${sectionsHtml}
+          </div>
+          <aside class="variants-panel fade-in" style="animation-delay: 0.35s">
+            ${variantsHtml}
+          </aside>
+        </div>
+      `;
+
+      // Wire up collapsible sections
+      content.querySelectorAll('.section-header').forEach(header => {
+        header.addEventListener('click', () => {
+          const i = header.dataset.section;
+          const body = document.getElementById(`section-body-${i}`);
+          const chevron = document.getElementById(`chevron-${i}`);
+          body.classList.toggle('hidden');
+          chevron.classList.toggle('open');
+          chevron.classList.toggle('closed');
+        });
+      });
+    }
+
+    // ─── Util ─────────────────────────────────────────────────────────────
+    function esc(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
