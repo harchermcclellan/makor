@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Makor — Biblical &amp; Talmudic Name Explorer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <script type="text/javascript" src=" https://cdnjs.cloudflare.com/ajax/libs/showdown/1.9.0/showdown.min.js" ></script>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -528,6 +529,7 @@
     const searchBtn = document.getElementById('searchBtn');
     const suggestionsEl = document.getElementById('suggestions');
     const content = document.getElementById('content');
+    var converter = new showdown.Converter();
 
     // ─── State ────────────────────────────────────────────────────────────
     let debounceTimer = null;
@@ -706,7 +708,7 @@
                 <h1 class="name-display">${esc(data.name)}</h1>
                 <span class="name-hebrew">${esc(data.transliteration)}</span>
               </div>
-              <p class="name-meaning">"${esc(data.meaning)}"</p>
+              <p class="name-meaning">"${converter.makeHtml((data.meaning))}"</p>
               <div class="name-meta">
                 <span class="meta-tag">${esc(data.origin)}</span>
                 <span class="meta-tag">${esc(data.gender)}</span>
