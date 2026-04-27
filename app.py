@@ -35,12 +35,7 @@ def get_name(name):
     """
     Look up a name and return its biblical/talmudic context.
 
-    TODO: Replace the mock data below with your actual data source.
-    Options to consider:
-      - SQLite / PostgreSQL database
-      - JSON file loaded at startup
-      - Sefaria API for textual references
-      - Your own LLM-powered pipeline
+    TODO: cache data for quicker responses
     """
 
 
@@ -55,13 +50,6 @@ def get_name(name):
     print(entry)
 
     return jsonify({"found":True, "data": entry})
-    # except:
-    #     key = name.strip().lower()
-    #     entry = MOCK_DATA.get(key)
-
-    #     if entry:
-    #         return jsonify({"found": True, "data": entry})
-    #     return jsonify({"found": False, "data": None}), 404
 
 def parse_topic(topic_response):
     """
@@ -183,7 +171,6 @@ def suggest_names():
     if not q:
         return jsonify([])
 
-    # TODO: Replace with your data source
     all_names = [
         "Miriam", "Ezra", "Ruth", "Caleb", "Naomi", "Elijah",
         "Esther", "Asher", "Leah", "Judah", "Abigail", "Micah",
@@ -210,7 +197,7 @@ def get_text(title, language):
 
 @app.route("/api/sources", methods=["GET"])
 def list_sources():
-    """Return available source categories. TODO: Pull from your data source."""
+    """Return available source categories. TODO: Build a list from Sefaria responses"""
     return jsonify([
         "Torah / Hebrew Bible",
         "Talmud Bavli",
